@@ -34,24 +34,24 @@ from xmppgcm import GCM, XMPPEvent
 
 def onAcknowledge(error, message_id, _from):
 	if error != None:
-		print 'not acknowledged by GCM'
-	print 'id - {0} : from - {1}'.format(message_id, _from)
-	
+		print('not acknowledged by GCM')
+	print('id - {0} : from - {1}'.format(message_id, _from))
+
 def onDisconnect(draining):
-	print 'inside onDisconnect'
+	print('inside onDisconnect')
 	xmpp.connect(('gcm-preprod.googleapis.com', 5236), use_ssl=True)
 
 def onSessionStart(queue_length):
-	print 'inside onSessionStart {0}'.format(queue_length)
+	print('inside onSessionStart {0}'.format(queue_length))
 	data = {'key1': 'value1'}
 	options = { 'delivery_receipt_requested': True }
 	xmpp.send_gcm('your_device_token', data, options, onAcknowledge)
 
 def onReceipt(data):
-	print 'inside onReceipt {0}'.format(data)
+	print('inside onReceipt {0}'.format(data))
 
 def onMessage(data):
-	print 'inside onSessionStart {0}'.format(data)
+	print('inside onSessionStart {0}'.format(data))
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)-8s %(message)s')
 logging.debug("Starting up")
@@ -67,7 +67,7 @@ xmpp.connect(('gcm-preprod.googleapis.com', 5236), use_ssl=True) #test environme
 
 while True:
     xmpp.process(block=True)
-    
+
 if __name__ == '__main__':
 	_pass
 ```

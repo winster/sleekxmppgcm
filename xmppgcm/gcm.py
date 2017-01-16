@@ -40,13 +40,13 @@ class GCMMessage(ElementBase):
 
     @property
     def is_error(self):
-        if 'error' in self.data.keys():
+        if 'error' in list(self.data.keys()):
             return True
         return False
 
     @property
     def error_description(self):
-        if 'error_description' in self.data.keys():
+        if 'error_description' in list(self.data.keys()):
             if self.data.get('error_description') != '':
                 return ' %s: %s' % (self.data.get('error', ''), self.data.get('error_description', ''))
             else:
@@ -139,7 +139,7 @@ class GCM(ClientXMPP):
         }
 
         if options:
-            for key, value in options.iteritems():
+            for key, value in list(options.items()):
                 payload[key]= value
 
         if cb:
