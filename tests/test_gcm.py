@@ -1,14 +1,11 @@
+from __future__ import absolute_import
 import unittest
 import sys
 import os
 import json
 from xml.etree import ElementTree
 from binascii import hexlify
-
-
-sys.path.append('../xmppgcm')
-
-from gcm import GCM, GCMMessage
+from xmppgcm.gcm import GCM, GCMMessage
 
 
 class TestGCM(unittest.TestCase):

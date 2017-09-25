@@ -105,13 +105,16 @@ class GCM(ClientXMPP):
         if data.message_type == GCMMessageType.NACK:
             log.debug('Received NACK for message_id: %s with error, %s' % (data.message_id, data.error_description))
             if data.message_id in self.ACKS:
-                self.ACKS[data.message_id](data.error_description, data)
+                self.ACKS[data.message_id](data.error_description,
+                                           data.message_id,
+                                           data['from']
+                                           )
                 del self.ACKS[data.message_id]
 
         elif data.message_type == GCMMessageType.ACK:
             log.debug('Received ACK for message_id: %s' % data.message_id)
             if data.message_id in self.ACKS:
-                self.ACKS[data.message_id](None, data)
+                self.ACKS[data.message_id](None, data.message_id, data['from'])
                 del self.ACKS[data.message_id]
 
         elif data.message_type == GCMMessageType.CONTROL:
@@ -173,5 +176,5 @@ class GCM(ClientXMPP):
 
     def random_id(self):
         rid = ''
-        for x in range(24): rid += random.choice(string.ascii_letters + string.digits)
+        for x in range(8): rid += random.choice(string.ascii_letters + string.digits)
         return rid
