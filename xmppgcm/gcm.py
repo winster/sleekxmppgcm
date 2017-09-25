@@ -41,9 +41,7 @@ class GCMMessage(ElementBase):
 
     @property
     def is_error(self):
-        if 'error' in list(self.data.keys()):
-            return True
-        return False
+        return 'error' in self.data
 
     @property
     def error_description(self):
@@ -176,5 +174,6 @@ class GCM(ClientXMPP):
 
     def random_id(self):
         rid = ''
-        for x in range(8): rid += random.choice(string.ascii_letters + string.digits)
+        for x in range(8):
+            rid += random.choice(string.ascii_letters + string.digits)
         return rid
