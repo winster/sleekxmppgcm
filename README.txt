@@ -1,3 +1,9 @@
+Version 0.2.3
+================
+Other
+------------
+* Code simplification.
+
 Version 0.2.2
 ================
 
