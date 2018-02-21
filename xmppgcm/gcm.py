@@ -101,7 +101,6 @@ class GCM(ClientXMPP):
     def on_gcm_message(self, msg):
         log.debug('inside on_gcm_message {0}'.format(msg))
         data = msg['gcm']
-        log.debug('Msg: {0}'.format(data))
         if data.message_type == GCMMessageType.NACK:
             log.debug('Received NACK for message_id: %s with error, %s' % (data.message_id, data.error_description))
             if data.message_id in self.ACKS:
@@ -124,21 +123,18 @@ class GCM(ClientXMPP):
             self.event(XMPPEvent.RECEIPT, data)
 
         else:
-            if data['from']:
-                self.send_gcm({
-                                'to': data['from'],
-                                'message_id': data.message_id,
-                                'message_type': 'ack',
-                            })
+            try:
+                self.send_ack(data.data['from'], data.message_id)
+            except KeyError:
+                log.debug('Received message that did not contain "from" field, not ACKing')
             self.event(XMPPEvent.MESSAGE, data)
 
     def session_start(self, event):
-        log.debug("session started")
-
+        log.debug("Session started")
         if self.connecton_draining == True:
             self.connecton_draining = False
             for i in reversed(self.QUEUE):
-                self.send_gcm(i)
+                self._send_gcm_payload(i)
             self.QUEUE = []
 
         self.event(XMPPEvent.CONNECTED, len(self.QUEUE))
@@ -147,7 +143,19 @@ class GCM(ClientXMPP):
         log.debug("Disconnected")
         self.event(XMPPEvent.DISCONNECTED, self.connecton_draining)
 
-    def send_gcm(self, to, data, options, cb, ttl=60):
+    def send_ack(self, to, message_id):
+        log.debug("ACKing message id: %s" % message_id)
+        payload = {
+            'to': to,
+            'message_id': message_id,
+            'message_type': 'ack',
+        }
+        self._send_gcm_payload(payload)
+
+    def _send_gcm_payload(self, payload):
+        self.send_raw(self.MSG.format(json.dumps(payload)))
+
+    def send_gcm(self, to, data, options=None, cb=None, ttl=86400):
         message_id = self.random_id()
         payload = {
             'to': to,
@@ -167,7 +175,7 @@ class GCM(ClientXMPP):
         if self.connecton_draining == True:
             self.QUEUE.append(payload)
         else:
-            self.send_raw(self.MSG.format(json.dumps(payload)))
+            self._send_gcm_payload(payload)
 
         return message_id
 
