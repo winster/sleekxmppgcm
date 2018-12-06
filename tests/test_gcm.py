@@ -1,14 +1,11 @@
+from __future__ import absolute_import
 import unittest
 import sys
 import os
 import json
 from xml.etree import ElementTree
 from binascii import hexlify
-
-
-sys.path.append('../xmppgcm')
-
-from gcm import GCM, GCMMessage
+from xmppgcm.gcm import GCM, GCMMessage
 
 
 class TestGCM(unittest.TestCase):
@@ -221,6 +218,18 @@ class TestGCM(unittest.TestCase):
         gcm.connection_draining = True
         self.assertTrue(gcm.connecton_draining)
         self.assertTrue(gcm.connection_draining)
+
+    def test_compose_raw_message(self):
+        gcm = GCM('a', 'b')
+        raw_message = gcm.compose_raw_message({
+            'to': 'A',
+            'message_id': 'ABCD',
+            'data': 'Hola mundo </Adios/> <3<',
+            'time_to_live': 123124,
+            'delivery_receipt_requested': True  
+        })
+        self.assertTrue(raw_message.startswith('<message'))
+        # TODO: improve validation
 
 
 

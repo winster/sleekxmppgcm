@@ -5,6 +5,7 @@ from sleekxmpp.stanza import Message
 from sleekxmpp.xmlstream import register_stanza_plugin
 from sleekxmpp.xmlstream.handler import Callback
 from sleekxmpp.xmlstream.matcher import StanzaPath
+import xml.etree.cElementTree as ET
 import uuid,json,random,string
 
 log = logging.getLogger('GCM_XMPP')
@@ -41,9 +42,7 @@ class GCMMessage(ElementBase):
 
     @property
     def is_error(self):
-        if 'error' in list(self.data.keys()):
-            return True
-        return False
+        return 'error' in self.data
 
     @property
     def error_description(self):
@@ -73,6 +72,8 @@ class GCM(ClientXMPP):
         ClientXMPP.__init__(self, id, password, sasl_mech='PLAIN')
         self.auto_reconnect = True
         self.connecton_draining = False
+        # TODO: usage of this method should be avoided, please use
+        #       the function compose_raw_message instead.
         self.MSG = '<message><gcm xmlns="google:mobile:data">{0}</gcm></message>'
         self.QUEUE = []
         self.ACKS = {}
@@ -105,13 +106,16 @@ class GCM(ClientXMPP):
         if data.message_type == GCMMessageType.NACK:
             log.debug('Received NACK for message_id: %s with error, %s' % (data.message_id, data.error_description))
             if data.message_id in self.ACKS:
-                self.ACKS[data.message_id](data.error_description, data)
+                self.ACKS[data.message_id](data.error_description,
+                                           data.message_id,
+                                           data['from']
+                                           )
                 del self.ACKS[data.message_id]
 
         elif data.message_type == GCMMessageType.ACK:
             log.debug('Received ACK for message_id: %s' % data.message_id)
             if data.message_id in self.ACKS:
-                self.ACKS[data.message_id](None, data)
+                self.ACKS[data.message_id](None, data.message_id, data['from'])
                 del self.ACKS[data.message_id]
 
         elif data.message_type == GCMMessageType.CONTROL:
@@ -167,11 +171,21 @@ class GCM(ClientXMPP):
         if self.connecton_draining == True:
             self.QUEUE.append(payload)
         else:
-            self.send_raw(self.MSG.format(json.dumps(payload)))
+            raw_message = self.compose_raw_message(payload)
+            self.send_raw(raw_message)
 
         return message_id
 
+    def compose_raw_message(self, payload):
+        message = ET.Element('message')
+        gcm = ET.SubElement(message, 'gcm',
+            xmlns='google:mobile:data'
+        )
+        gcm.text = json.dumps(payload)
+        return ET.tostring(message)
+
     def random_id(self):
         rid = ''
-        for x in range(24): rid += random.choice(string.ascii_letters + string.digits)
+        for x in range(8):
+            rid += random.choice(string.ascii_letters + string.digits)
         return rid
