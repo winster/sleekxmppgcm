@@ -5,6 +5,7 @@ from sleekxmpp.stanza import Message
 from sleekxmpp.xmlstream import register_stanza_plugin
 from sleekxmpp.xmlstream.handler import Callback
 from sleekxmpp.xmlstream.matcher import StanzaPath
+import xml.etree.cElementTree as ET
 import uuid,json,random,string
 
 log = logging.getLogger('GCM_XMPP')
@@ -71,6 +72,8 @@ class GCM(ClientXMPP):
         ClientXMPP.__init__(self, id, password, sasl_mech='PLAIN')
         self.auto_reconnect = True
         self.connecton_draining = False
+        # TODO: usage of this method should be avoided, please use
+        #       the function compose_raw_message instead.
         self.MSG = '<message><gcm xmlns="google:mobile:data">{0}</gcm></message>'
         self.QUEUE = []
         self.ACKS = {}
@@ -168,9 +171,18 @@ class GCM(ClientXMPP):
         if self.connecton_draining == True:
             self.QUEUE.append(payload)
         else:
-            self.send_raw(self.MSG.format(json.dumps(payload)))
+            raw_message = self.compose_raw_message(payload)
+            self.send_raw(raw_message)
 
         return message_id
+
+    def compose_raw_message(self, payload):
+        message = ET.Element('message')
+        gcm = ET.SubElement(message, 'gcm',
+            xmlns='google:mobile:data'
+        )
+        gcm.text = json.dumps(payload)
+        return ET.tostring(message)
 
     def random_id(self):
         rid = ''
